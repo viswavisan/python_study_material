@@ -6,14 +6,10 @@ import statistics
 from collections import Counter
 
 class data_analysis_basic:
-    def __init__(self):
-        pass
-
     def read_csv(self,file_path):
         with open(file_path, mode='r') as file:
             reader = csv.DictReader(file)
-            return [row for row in reader]
-
+            return list(reader)
     def analyze_numerical(self,data, columns):
         result = {}
         for col in columns:
@@ -26,24 +22,19 @@ class data_analysis_basic:
                 'max': max(values)
             }
         return result
-
     def analyze_categorical(self,data, columns):
         result = {}
         for col in columns:
             values = [row[col] for row in data if row[col]]
             result[col] = dict(Counter(values))
         return result
-
     def run(self):
         file_path = 'sample.csv'  # Replace with your actual file path
         data = self.read_csv(file_path)
-
         numerical_columns = ['age', 'salary']
         categorical_columns = ['gender', 'department']
-
         numerical_stats = self.analyze_numerical(data, numerical_columns)
         categorical_counts = self.analyze_categorical(data, categorical_columns)
-
         print("Numerical Analysis:")
         for col, stats in numerical_stats.items():
             print(f"{col}: {stats}")
@@ -54,6 +45,172 @@ class data_analysis_basic:
 
 #data_analysis_basic().run()
 
+#--------------SQL--------------#
+'''
+Layers of RDBMS
+1.logical layer: database,query language
+2.application layer:application server,application language
+3.physical layer:
+'''
+
+#basic
+import sqlite3
+
+def run_query(query):
+    conn = sqlite3.connect(':memory:')
+    cursor = conn.cursor()
+    cursor.execute(''' CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, salary REAL)''')
+    cursor.executemany('INSERT INTO employees VALUES (?, ?, ?)', [(1, 'Alice', 70000),(2, 'Bob', 50000),(3, 'Charlie', 60000),(4, 'David', 80000),(5, 'Eve', 55000)])
+    cursor.execute(query)
+    results = [i[0] for i in cursor.fetchall()]
+    conn.close()
+    return results
+# print(run_query(''' SELECT name FROM employees WHERE salary > ( SELECT AVG(salary) FROM employees) '''))
+
+#ORM
+'''
+ORM: Object-Relational Mapping
+ORMs map database tables to Python classes, and rows to instances (objects) of those classes.
+Without ORM (Raw SQL):
+cursor.execute("SELECT name FROM users WHERE age > 20")
+With ORM:
+session.query(User).filter(User.age > 20).all()
+
+Benefits of Using an ORM:
+Cleaner code: Work with Python objects instead of SQL strings.
+Database abstraction: Easily switch between databases (e.g., SQLite → PostgreSQL).
+Security: Reduces risk of SQL injection.
+Productivity: Less boilerplate code, more focus on business logic.
+
+    Use SQLAlchemy Core (engine.connect()) if:
+        You need maximum performance.
+        You're doing bulk operations or data pipelines.
+        You prefer writing raw SQL.
+
+    Use SQLAlchemy ORM (Session) if:
+        You want clean, maintainable code.
+        You're building web apps or APIs.
+        You prefer working with Python objects instead of SQL.
+
+    Use Meta Data for internediate (Auto Mapping)
+'''
+
+from sqlalchemy import create_engine, Column, Integer, String,text,Table,ForeignKey
+from sqlalchemy.orm import sessionmaker,registry,aliased,relationship
+mapper_registry = registry()
+Base = mapper_registry.generate_base()
+
+class SqlAlchemy:
+    def __init__(self, db_url='sqlite:///:memory:'):
+        self.engine = create_engine(db_url, echo=False) #echo=True to print sql log
+        self.session = sessionmaker(bind=self.engine)() #session for ORM
+    def execute_raw(self,query,params=None):
+        with self.engine.begin() as conn: #begin() auto commit / connect() manual commit
+            result = conn.execute(text(query), params or {})
+            if query.strip().lower().startswith("select"):
+                return [dict(row._mapping) for row in result]
+            else: return 'executed successfully'
+db=SqlAlchemy()
+if __name__ == "__main__": 
+    db.execute_raw('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)')
+    data = [{"name": "Alice", "age": 30},{"name": "Bob", "age": 25},{"name": "Charlie", "age": 35},]
+    db.execute_raw('INSERT INTO users (name, age) VALUES (:name, :age)', data)
+    # print(db.run('select * from users'))
+
+#add additional feature convert dict and print value instead of object (optional)
+class DictMixin:
+    def to_dict(self):
+        return {column.name: getattr(self, column.name, None) for column in self.__table__.columns}
+    def __repr__(self):
+        return str(self.to_dict())
+    
+#table class from existing table Automap
+@mapper_registry.mapped
+class User(DictMixin):
+    __table__ = Table("users", Base.metadata, autoload_with=db.engine)
+ 
+#table class from existing/new table manual map
+class User2(Base,DictMixin):
+    __tablename__ = 'users2'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    age = Column(Integer)
+
+if __name__ == "__main__":
+    #User2.metadata.create_all(db.engine)#create table if not exist
+    Base.metadata.create_all(db.engine)#create all declared tables if not exists
+    data = [{"name": "Alice1", "age": 30},{"name": "Bob1", "age": 25},{"name": "Charlie1", "age": 35},]
+    db.session.add_all([User2(**row) for row in data]) # insert many
+    db.session.commit()
+    # print(db.session.query(User).all()) #get all values from table
+    # print(db.session.query(User2).filter_by(name="Alice1").first())#where and limit1
+    # print(User.__table__.name)
+
+#querry to get 3rd highest marks from students table
+
+#problem:1
+class students(Base,DictMixin):
+    __tablename__='students'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    mark = Column(Integer)
+
+students.metadata.create_all(db.engine)
+data = [{"name": "Grace", "mark": 98},{"name": "Alice", "mark": 100},{"name": "Charlie", "mark": 99},{"name": "Bob", "mark": 100},{"name": "Tony", "mark": 98},{"name": "steve", "mark": 97},]
+db.session.add_all([students(**row) for row in data]) # insert many
+db.session.commit()
+
+#ORM (prefered)
+third_highest_mark = db.session.query(students.mark).distinct().order_by(students.mark.desc()).limit(1).offset(2).scalar()
+students_with_third_highest = db.session.query(students).filter(students.mark == third_highest_mark).all()
+# print(students_with_third_highest)
+
+#core
+from sqlalchemy import select, distinct, desc
+query = select(students).where(students.mark == ((select(distinct(students.mark)).order_by(desc(students.mark)).limit(1).offset(2)).scalar_subquery()))
+# print(db.session.execute(query).scalars().all())
+
+#raw query
+students_with_third_highest=db.execute_raw("SELECT name FROM students WHERE mark = (SELECT DISTINCT mark FROM students ORDER BY mark DESC LIMIT 1 OFFSET 2);")
+# print(students_with_third_highest)
+
+#problem2
+
+class Employee(Base,DictMixin):
+    __tablename__ = 'employees'   
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    salary = Column(Integer)
+    manager_id = Column(Integer, ForeignKey('employees.id'))
+
+Employee.metadata.create_all(db.engine)
+data = [
+    {"id": 1, "name": "Alice", "salary": 9000, "manager_id": None},    # CEO
+    {"id": 2, "name": "Bob", "salary": 7000, "manager_id": 1},
+    {"id": 3, "name": "Charlie", "salary": 8000, "manager_id": 1},     # Earns more than manager's other subordinates
+    {"id": 4, "name": "David", "salary": 9500, "manager_id": 2},       # Earns more than Bob (his manager)
+    {"id": 5, "name": "Eve", "salary": 6000, "manager_id": 3},
+]
+db.session.add_all([Employee(**row) for row in data])
+db.session.commit()
+
+#raw query
+highpaid=db.execute_raw("""
+SELECT e.name AS employee_name, e.salary AS employee_salary,m.name AS manager_name, m.salary AS manager_salary
+FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.salary > m.salary;""")
+# print(highpaid)
+
+#ORM
+employee = aliased(Employee)
+manager = aliased(Employee)
+#Because joining the Employee table to itself (employee and manager), and both need different references.
+
+result=(db.session.query( employee)
+        .join(manager, employee.manager_id==manager.id)
+        .filter(employee.salary > manager.salary)
+        .all())
+# print(result)
+    
 #Pandas:
 '''
 Pandas is a powerful and widely-used open-source Python library for data manipulation and analysis. 
@@ -75,11 +232,11 @@ def json_handling():
     fields=pd.DataFrame(data['fields'])
     # print(fields['label'])
     df=pd.DataFrame(data['data'],columns=fields['label'])
-    # print(df)
+    print(df)
     
 # json_handling()
 
-#Series:
+# Series:
 '''
 A Pandas Series is a one-dimensional labeled array in Python, capable of holding any data type (integers, strings, floats, Python objects, etc.)
 '''
@@ -210,3 +367,39 @@ df_side_by_side = pd.concat([df1, df2], axis=1)  # axis=1 for side by side
 merged_df = pd.merge(df1, df2, on='id', how='inner')  # Options: 'inner', 'outer', 'left', 'right'
 # Merge based on multiple columns
 merged_df_multi = pd.merge(df1, df2, on=['id', 'name'], how='outer')  # Merge on multiple columns
+
+
+
+#handling big data
+'''
+Handling Big Data in Python (Short Version)
+Use Dask or PySpark for large-scale data processing.
+Read data in chunks with Pandas if it's too big for memory.
+Store data in efficient formats like Parquet or HDF5.
+Use cloud tools (like BigQuery or AWS) for massive datasets.
+'''
+
+#-----------------pyspark--------------------#
+'''
+PySpark is the Python API for Apache Spark, a powerful distributed computing framework. 
+It allows you to write Spark applications using Python, combining the simplicity of Python
+with the scalability of Spark.
+'''
+
+def spark_test():
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col
+
+    # Create a Spark session
+    spark = SparkSession.builder.appName("PySpark Example")\
+        .config("spark.driver.extraJavaOptions", "--enable-native-access=ALL-UNNAMED") \
+        .getOrCreate()
+
+    # Sample data
+    data = [("Alice", 25),("Bob", 30),("Charlie", 35)]
+    columns = ["Name", "Age"]
+    df = spark.createDataFrame(data, columns)
+    df.show()
+    df_filtered = df.filter(col("Age") > 28)
+    df_filtered.show()
+    spark.stop()
