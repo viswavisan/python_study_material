@@ -1,3 +1,18 @@
+'''
+DevOps is about automating and improving the process of building, testing, releasing, and deploying software — faster and more reliably.
+CI/CD (Continuous Integration / Continuous Deployment)
+'''
+
+'''
+2. Tools
+Version Control: Git, GitHub, GitLab
+CI/CD Tools: Jenkins, GitHub Actions, GitLab CI, CircleCI
+Containers: Docker
+Orchestration: Kubernetes, Helm
+Infrastructure as Code: Terraform, Ansible
+Monitoring: Prometheus, Grafana
+Cloud Providers: AWS, Azure, GCP
+'''
 #lint
 '''
     In programming, lint (or linter) refers to a tool that analyzes your code for potential errors, 
@@ -249,3 +264,9 @@ def deploy_in_docker():
 | **Resource limits**  | Not built-in              | Enforced via YAML                     |
 | **Use case**         | Dev, small apps           | Prod, large-scale distributed systems |
 '''
+
+#Grafana
+
+#node exporter
+
+#prometheus
