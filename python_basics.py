@@ -265,37 +265,6 @@ it is a common Python idiom used to control the execution of code when a file is
 To prevent certain code from running when the file is imported.
 '''
 
-
-
-#lint
-'''
-    In programming, lint (or linter) refers to a tool that analyzes your code for potential errors, 
-    bugs, stylistic issues, or suspicious constructs.
-    A linter checks your code for:
-
-        Syntax errors
-        Code style violations (e.g., indentation, naming conventions)
-        Potential bugs (e.g., unused variables, unreachable code)
-        Best practices (e.g., avoiding deprecated functions)
-    Python	pylint, flake8, black (formatter)
-    
-    flake8 my_script.py
-    my_script.py:3:1: F401 'os' imported but unused
-    my_script.py:5:80: E501 line too long (82 > 79 characters)
-
-'''
-
-#code coverage
-'''
-    In SonarQube, code coverage refers to the percentage of your source code that is tested by automated tests (like unit tests). It helps you understand how much of your code is being exercised during testing, which is a key indicator of code quality and test effectiveness.
-
-    What Code Coverage Measures:
-    Lines covered: How many lines of code were executed during tests.
-    Branches covered: Whether all possible paths (like if/else conditions) were tested.
-    Conditions covered: Whether all boolean expressions were evaluated both true and false.'''
-
-
-
 #test case
 def add(a, b):
     return a + b
@@ -354,189 +323,27 @@ def divide(a, b):
 '''
 
 from pydantic import BaseModel
-
 class User(BaseModel):
     name: str
     age: int
     email: str
 def pydantic_test():
-    # Create a user instance
     user = User(name="Alice", age=25, email="alice@example.com")
-
-    # Access fields
     print(user.name)
-
-    # Automatic validation
     try:
         invalid_user = User(name="Bob", age="twenty", email="bob@example.com")
-        # Raises a validation error because age is not an integer
     except Exception as e:print(e)
+    print(user.model_dump()) #user.dict()
+    print(user.model_dump_json()) #user.json()
 
-#--------------SQL--------------#
-
+#create environment:
 '''
-Layers of RDBMS
-1.logical layer: database,query language
-2.application layer:application server,application language
-3.physical layer:
-'''
-
-#ORM
-'''
-ORM: Object-Relational Mapping
-ORMs map database tables to Python classes, and rows to instances (objects) of those classes.
-Without ORM (Raw SQL):
-cursor.execute("SELECT name FROM users WHERE age > 20")
-With ORM:
-session.query(User).filter(User.age > 20).all()
-
-Benefits of Using an ORM:
-Cleaner code: Work with Python objects instead of SQL strings.
-Database abstraction: Easily switch between databases (e.g., SQLite → PostgreSQL).
-Security: Reduces risk of SQL injection.
-Productivity: Less boilerplate code, more focus on business logic.
+python -m venv venv
+venv\Scripts\ activate
 '''
 
-
-
-#basic
-import pymysql
-
-# Connect to the database
-connection = pymysql.connect(host='localhost',user='root',password='root',database='employee',cursorclass=pymysql.cursors.DictCursor)
-
-def pymysql_test():
-    try:
-        with connection.cursor() as cursor:
-            # Create a new table
-            cursor.execute("""CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(100),email VARCHAR(100))""")
-
-            # Insert a new record
-            cursor.execute("INSERT INTO users (name, age) VALUES (%s, %s)", ("Alice", "20"))
-
-            # Commit the transaction
-            connection.commit()
-
-            # Query the table
-            cursor.execute("SELECT * FROM users")
-            result = cursor.fetchall()
-            for row in result:
-                print(row)
-
-    finally:
-        connection.close()
-
-#ORM model
-
-from sqlalchemy import create_engine, Column, Integer, String,text,MetaData,select
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-engine = create_engine('mysql+pymysql://root:root@localhost/employee')
-
-'''
-    Use SQLAlchemy Core (engine.connect()) if:
-        You need maximum performance.
-        You're doing bulk operations or data pipelines.
-        You prefer writing raw SQL.
-
-    Use SQLAlchemy ORM (Session) if:
-        You want clean, maintainable code.
-        You're building web apps or APIs.
-        You prefer working with Python objects instead of SQL.
-
-    Use Meta Data for internediate (Auto Mapping)
-'''
-def alchemy_test():
-# Use raw SQL (sql injection risk but faster)
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT * FROM database.table WHERE age > 20"))
-        for row in result: print(f"{row.name} is {row.age} years old.")
-
-#use meta data (avoid sql injection risk)
-    metadata = MetaData()
-    metadata.reflect(bind=engine)
-    users_table = metadata.tables['users']
-
-    with engine.connect() as conn:
-        result = conn.execute(select(users_table).where(users_table.c.age > 20))
-        for row in result:print(f"{row.name} is {row.age} years old.")
-
-#use ORM MODEL (avoid sql injection risk little slow)
-    Base = declarative_base()
-    class User(Base):
-        __tablename__ = 'table' 
-        id = Column(Integer, primary_key=True)
-        name = Column(String(100))
-        age = Column(Integer)
-    Base.metadata.create_all(engine)
-
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    users = session.query(User).all()
-
-    # new_user = User(name="Alice", age=25)
-    # session.add(new_user)
-    # session.commit()
-
-    for user in users:print(f"{user.name}, {user.age}")
-
-    # Fetch users older than 20
-    older_users = session.query(User).filter(User.age > 20).all()
-    for user in older_users:print(f"{user.name} is {user.age} years old.")
-
-
-#querry to get second highest marks from students table
-#Raw Query
-"SELECT name FROM students WHERE marks = (SELECT DISTINCT marks FROM students ORDER BY marks DESC LIMIT 1 OFFSET 1);"
-
-
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
-
-class Student(Base):
-    __tablename__ = 'students'
-    name = Column(String)
-    marks = Column(Integer)
-
-from sqlalchemy import select, distinct, desc
-subquery = (select(distinct(Student.marks)).order_by(desc(Student.marks)).limit(1).offset(1)).scalar_subquery()
-
-query = select(Student.name).where(Student.marks == subquery)
-
-from sqlalchemy.orm import Session
-with Session(engine) as session:
-    result = session.execute(query).scalars().all()
-    print(result)
-
-
-
-#-----------------pyspark--------------------#
-'''
-PySpark is the Python API for Apache Spark, a powerful distributed computing framework. 
-It allows you to write Spark applications using Python, combining the simplicity of Python
-with the scalability of Spark.
-'''
-
-def spark_test():
-    from pyspark.sql import SparkSession
-    from pyspark.sql.functions import col
-
-    # Create a Spark session
-    spark = SparkSession.builder.appName("PySpark Example")\
-        .config("spark.driver.extraJavaOptions", "--enable-native-access=ALL-UNNAMED") \
-        .getOrCreate()
-
-    # Sample data
-    data = [("Alice", 25),("Bob", 30),("Charlie", 35)]
-    columns = ["Name", "Age"]
-    df = spark.createDataFrame(data, columns)
-    df.show()
-    df_filtered = df.filter(col("Age") > 28)
-    df_filtered.show()
-    spark.stop()
-
+#add requirements
+'''pip install -r requirements.txt'''
 
 #stages in development:
 '''
@@ -547,29 +354,3 @@ Testing - Verify functionality, performance, and security.
 Deployment - Release the application to users or production.
 Maintenance - Fix bugs, update features, and ensure stability.
 '''
-
-#create environment:
-'''
-python -m venv venv
-venv\Scripts\ activate
-
-'''
-
-#async program
-''' 
-In Python, an async method (or asynchronous function) is a function that allows you to perform non-blocking operations,
-such as I/O tasks (like reading files, making network requests, or querying databases), without freezing the entire program.
-'''
-
-
-
-#handling big data
-'''
-Handling Big Data in Python (Short Version)
-Use Dask or PySpark for large-scale data processing.
-Read data in chunks with Pandas if it's too big for memory.
-Store data in efficient formats like Parquet or HDF5.
-Use cloud tools (like BigQuery or AWS) for massive datasets.
-'''
-
-

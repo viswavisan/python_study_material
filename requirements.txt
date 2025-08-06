@@ -1,0 +1,9 @@
+GitPython
+docker
+kubernetes
+
+pandas
+pyspark
+numpy
+matplotlib
+sqlalchemy
