@@ -121,7 +121,7 @@ class Child(Parent):        #child class
         #print(self.__x)     #AttributeError: 'child' object has no attribute '_child__x'
         return super().x    #accessing parent class variable
 
-print('inheritance (accesing):', Child().parent_method())
+print('inheritance (accessing):', Child().parent_method())
 print('polymorph (over ridding):', Child.x)
 print('super class (retain parent object):', Child().super_c())
 try:print(Child.__x)
@@ -315,10 +315,10 @@ Maintenance - Fix bugs, update features, and ensure stability.
 
 
 #----------best practices------------#
-#split odd, even numbers
+#1.split odd, even numbers
 even,odd=[i   for i in range(100) if i%2==0],[i  for i in range(100) if i%2!=0 ]
 
-
+#2.flatten list
 @my_decorator
 def shape_pattern(x):
     for i in range(1,x):
@@ -329,6 +329,7 @@ def flatten_list(nested_list):
 
 #print(flatten_list([1,[2,[3,4],5],6]))
 
+#3.flatten dict
 def flatten_dict(d,parent_key=''):
     final={}
     for key,v in d.items():
@@ -338,6 +339,7 @@ def flatten_dict(d,parent_key=''):
     return final
 # print(flatten_dict({'a':1, 'b':{'b1':2}, 'c':[1,2,3], 'd':{'d1':{'d2':3}} }))
 
+#4.group anagrams
 from collections import defaultdict
 def group_anagrams(words):
     grouped = defaultdict(list)
@@ -346,13 +348,33 @@ def group_anagrams(words):
 
 print(group_anagrams(words=['eat','tea','tan','ate','nat','bat']))
 
+#5.number multiplier
 def number_multiplier(x):return ''.join([t*int(n) for t,n in zip(x[::2],x[1::2])])
 #print(number_multiplier('a3b2c4'))
 
+#6.verify number count
 def verify_number_count(x):return all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
 #print(verify_number_count('1a2xy3eee'))
 
 # Lambda
 verify_number_count_l = lambda x: all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
 #print(verify_number_count_l('1a2xy3eee'))
+
+#7.List reindexing- reindex 0 at the end
+l=[1,0,3,0,6,7,0,8]
+print([i for i in l if i!=0]+[0]*l.count(0))
+
+#8.verify brackets
+def verify_brackets(x):
+    s = []
+    brackets = {'(': ')', '{': '}', '[': ']'}
+    for char in x:
+        if char in brackets.keys():
+            s.append(char)
+        elif char in brackets.values():
+            if not s or brackets[s.pop()] != char:
+                return False
+    return not s
+print(verify_brackets('{[()]}'))
+print(verify_brackets('{[(])}'))
 
