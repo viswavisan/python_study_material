@@ -1,11 +1,11 @@
 ## Python Basics and Advanced Concepts
 
 #what is python?
-'''
+"""
 Python is a high-level, interpreted programming language known for its simplicity and readability.
 It supports multiple programming paradigms, including procedural, object-oriented, and functional programming.
 Python is widely used for web development, data analysis, artificial intelligence, scientific computing, and more.
-'''
+"""
 
 # data types:
 '''
@@ -107,7 +107,7 @@ OOP allows for encapsulation, inheritance, and polymorphism, making it easier to
 4. Abstraction: Hiding complex implementation details and exposing only the necessary parts of an object.
 '''
 #superclass/inheritance/over ridding(polymorph)/encapsulation
-class parent:               #parent class
+class Parent:               #parent class
     x='parent value'        #class variable / public variable
     __x='restricted value1' #private variable
     def __init__(self):     #constructor
@@ -115,16 +115,16 @@ class parent:               #parent class
     def parent_method(self): #parent method
         return 'parent method called'
 
-class child(parent):        #child class
+class Child(Parent):        #child class
     x='child value'         #overriding parent class variable (polymorphism)
     def super_c(self):
         #print(self.__x)     #AttributeError: 'child' object has no attribute '_child__x'
         return super().x    #accessing parent class variable
 
-print('inheritance (accesing):',child().parent_method())
-print('polymorph (over ridding):',child.x)
-print('super class (retain parent object):',child().super_c())
-try:print(child.__x)
+print('inheritance (accesing):', Child().parent_method())
+print('polymorph (over ridding):', Child.x)
+print('super class (retain parent object):', Child().super_c())
+try:print(Child.__x)
 except Exception as e: print('encapsulated :',str(e))
 #Abstact class
 
@@ -205,50 +205,6 @@ Threads share the same memory space, which allows for efficient communication.
 2. Multiprocessing: Involves running multiple processes, each with its own memory space. 
 This can lead to better performance for CPU-bound tasks, as it bypasses the Global Interpreter Lock (GIL) in Python.
 '''
-
-
-#----------best practices------------#
-#split odd, even numbers
-even,odd=[i   for i in range(100) if i%2==0],[i  for i in range(100) if i%2!=0 ]
-
-
-@my_decorator
-def shape_pattern(x):
-    for i in range(1,x):
-        print(' '*(x-i),''.join([str(y) for y in range (1,i)])+''.join([str(y) for y in range (i,0,-1)]),' '*(x-i))
-
-def flatten_list(nested_list):
-    return [item for sublist in nested_list for item in (flatten_list(sublist) if isinstance(sublist, list) else [sublist])]
-
-#print(flatten_list([1,[2,[3,4],5],6]))
-
-def flatten_dict(d,parent_key=''):
-    final={}
-    for key,v in d.items():
-        key=f'{parent_key}.{key}' if parent_key!='' else key
-        if isinstance(v, dict):final.update(flatten_dict(v,key))
-        else:final[key]=v
-    return final
-# print(flatten_dict({'a':1, 'b':{'b1':2}, 'c':[1,2,3], 'd':{'d1':{'d2':3}} }))
-
-from collections import defaultdict
-def group_anagrams(words):
-    grouped = defaultdict(list)
-    [grouped[''.join(sorted(word))].append(word) for word in words]    
-    return list(grouped.values())
-
-print(group_anagrams(words=['eat','tea','tan','ate','nat','bat']))
-
-def number_multiplier(x):return ''.join([t*int(n) for t,n in zip(x[::2],x[1::2])])
-#print(number_multiplier('a3b2c4'))
-
-def verify_number_count(x):return all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
-#print(verify_number_count('1a2xy3eee'))
-
-# Lambda
-verify_number_count_l = lambda x: all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
-#print(verify_number_count_l('1a2xy3eee'))
-
 
 #return type hint:
 '''
@@ -354,3 +310,49 @@ Testing - Verify functionality, performance, and security.
 Deployment - Release the application to users or production.
 Maintenance - Fix bugs, update features, and ensure stability.
 '''
+
+
+
+
+#----------best practices------------#
+#split odd, even numbers
+even,odd=[i   for i in range(100) if i%2==0],[i  for i in range(100) if i%2!=0 ]
+
+
+@my_decorator
+def shape_pattern(x):
+    for i in range(1,x):
+        print(' '*(x-i),''.join([str(y) for y in range (1,i)])+''.join([str(y) for y in range (i,0,-1)]),' '*(x-i))
+
+def flatten_list(nested_list):
+    return [item for sublist in nested_list for item in (flatten_list(sublist) if isinstance(sublist, list) else [sublist])]
+
+#print(flatten_list([1,[2,[3,4],5],6]))
+
+def flatten_dict(d,parent_key=''):
+    final={}
+    for key,v in d.items():
+        key=f'{parent_key}.{key}' if parent_key!='' else key
+        if isinstance(v, dict):final.update(flatten_dict(v,key))
+        else:final[key]=v
+    return final
+# print(flatten_dict({'a':1, 'b':{'b1':2}, 'c':[1,2,3], 'd':{'d1':{'d2':3}} }))
+
+from collections import defaultdict
+def group_anagrams(words):
+    grouped = defaultdict(list)
+    [grouped[''.join(sorted(word))].append(word) for word in words]
+    return list(grouped.values())
+
+print(group_anagrams(words=['eat','tea','tan','ate','nat','bat']))
+
+def number_multiplier(x):return ''.join([t*int(n) for t,n in zip(x[::2],x[1::2])])
+#print(number_multiplier('a3b2c4'))
+
+def verify_number_count(x):return all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
+#print(verify_number_count('1a2xy3eee'))
+
+# Lambda
+verify_number_count_l = lambda x: all([x[n+1:n+1+int(i)].isalpha() for n,i in enumerate(x) if i.isdigit()])
+#print(verify_number_count_l('1a2xy3eee'))
+
